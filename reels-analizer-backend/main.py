@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 import json
 
 import models, schemas, utils, database
@@ -11,6 +12,15 @@ app = FastAPI(
     title="Reels Analizer API",
     description="Instagram içeriklerini AI ile analiz eden API",
     version="1.0.0"
+)
+
+# CORS ayarları (Angular'dan istek alabilmek için)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],  # Angular dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 models.Base.metadata.create_all(bind=database.engine)

@@ -1,0 +1,227 @@
+<div class="results-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <button class="back-btn" (click)="goBack()">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Ana Sayfa
+      </button>
+
+      <h1 class="header-title">
+        <span class="username-icon">&#64;</span>{{ username }}
+      </h1>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Veriler yükleniyor...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="errorMessage && !isLoading" class="error-container">
+    <div class="error-icon">⚠️</div>
+    <h2 class="error-title">Bir Hata Oluştu</h2>
+    <p class="error-message">{{ errorMessage }}</p>
+    <button class="retry-btn" (click)="loadData()">Tekrar Dene</button>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading && !errorMessage" class="main-content">
+    <!-- Statistics Section -->
+    <section class="stats-section" *ngIf="stats">
+      <h2 class="section-title">📊 İstatistikler</h2>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-icon">📝</div>
+          <div class="stat-info">
+            <p class="stat-label">Toplam Post</p>
+            <p class="stat-value">{{ stats.total_posts }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-secondary">
+          <div class="stat-icon">🍹</div>
+          <div class="stat-info">
+            <p class="stat-label">Farklı Kategori</p>
+            <p class="stat-value">{{ stats.categories.length }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-accent">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-info">
+            <p class="stat-label">En Popüler</p>
+            <p class="stat-value">
+              {{ stats.categories[0]?.drink_category || "N/A" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+      <h2 class="section-title">🔍 Postları Filtrele</h2>
+
+      <div class="filter-chips">
+        <button
+          class="filter-chip"
+          [class.active]="selectedCategory === 'all'"
+          (click)="filterByCategory('all')"
+        >
+          Tümü ({{ posts.length }})
+        </button>
+
+        <button
+          *ngFor="let category of availableCategories"
+          class="filter-chip"
+          [class.active]="selectedCategory === category"
+          [style.borderColor]="getCategoryColor(category)"
+          [style.backgroundColor]="
+            selectedCategory === category
+              ? getCategoryColor(category)
+              : 'transparent'
+          "
+          (click)="filterByCategory(category)"
+        >
+          {{ category }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Posts Grid -->
+    <section class="posts-section">
+      <h2 class="section-title">
+        📱 Postlar
+        <span class="post-count">({{ filteredPosts.length }})</span>
+      </h2>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredPosts.length === 0" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <p class="empty-text">Bu kategoride post bulunamadı</p>
+      </div>
+
+      <!-- Posts Grid -->
+      <div class="posts-grid" *ngIf="filteredPosts.length > 0">
+        <div *ngFor="let post of filteredPosts" class="post-card">
+          <!-- Media -->
+          <div class="post-media">
+            <img
+              *ngIf="post.media_type === 'IMAGE'"
+              [src]="post.media_url"
+              [alt]="post.caption || 'Post image'"
+              class="post-image"
+            />
+            <video
+              *ngIf="post.media_type === 'VIDEO'"
+              [src]="post.media_url"
+              class="post-video"
+              controls
+              preload="metadata"
+            ></video>
+
+            <div class="media-badge">
+              {{ getMediaIcon(post.media_type) }}
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="post-content">
+            <!-- Category Badge -->
+            <div
+              class="category-badge"
+              [style.backgroundColor]="getCategoryColor(post.drink_category)"
+            >
+              {{ post.drink_category || "Genel" }}
+            </div>
+
+            <!-- AI Summary -->
+            <h3 class="post-title">{{ post.ai_summary || "Başlık yok" }}</h3>
+
+            <!-- Caption -->
+            <p class="post-caption" *ngIf="post.caption">
+              {{
+                post.caption.length > 150
+                  ? post.caption.substring(0, 150) + "..."
+                  : post.caption
+              }}
+            </p>
+
+            <!-- Footer -->
+            <div class="post-footer">
+              <div class="post-date">
+                📅 {{ formatDate(post.post_timestamp) }}
+              </div>
+              <div class="post-category-tag">
+                {{ post.ai_category }}
+              </div>
+            </div>
+
+            <!-- Instagram Link Button - YENİ EKLENEN -->
+            <a
+              [href]="getInstagramPostUrl(post.instagram_id)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="instagram-link-btn"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path
+                  d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
+                ></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              Instagram'da Görüntüle
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                ></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Powered by <strong>Cocktail Recipe Analyzer</strong> © 2024</p>
+  </footer>
+</div>
