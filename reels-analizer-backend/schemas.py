@@ -1,12 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional
 
-# Kullanıcının frontend'den göndereceği veri yapısı
 class AnalysisRequest(BaseModel):
     instagram_url: str
 
-# Tek bir postun dışarıya sunulacak hali
 class PostResponse(BaseModel):
     instagram_id: str
     username: str
@@ -19,4 +17,4 @@ class PostResponse(BaseModel):
     drink_category: Optional[str]
 
     class Config:
-        from_attributes = True # SQLAlchemy modellerini otomatik dönüştürmek için
+        from_attributes = True # SQLAlchemy modellerini Pydantic'e dönüştürmek için şart

@@ -1,99 +1,39 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
 from fastapi.middleware.cors import CORSMiddleware
-import json
+from typing import List
+import time
 
 import models, schemas, utils, database
-from services.instagram import fetch_instagram_data
+from services.instagram import fetch_instagram_page
 from services.analyzer import analyze_instagram_posts, merge_analysis_with_posts
 
 app = FastAPI(
     title="Reels Analizer API",
-    description="Instagram içeriklerini AI ile analiz eden API",
-    version="1.0.0"
+    description="Instagram içeriklerini AI ile analiz eden gelişmiş API",
+    version="1.1.0"
 )
 
-# CORS ayarları (Angular'dan istek alabilmek için)
+# CORS Ayarları (Angular entegrasyonu için şart)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],  # Angular dev server
+    allow_origins=["http://localhost:4200"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Tabloları oluştur (Database'de yeni sütun eklediyseniz pgAdmin'den tabloyu düşürmeyi unutmayın)
 models.Base.metadata.create_all(bind=database.engine)
 
-@app.post("/analyze", response_model=List[schemas.PostResponse])
-def analyze_profile(request: schemas.AnalysisRequest, db: Session = Depends(database.get_db)):
-    """Instagram profilini analiz eder veya veritabanında varsa direkt getirir"""
-    
-    print(f"\n{'='*60}")
-    print(f"ANALİZ TALEBİ: {request.instagram_url}")
-    print(f"{'='*60}\n")
-    
-    # 1. URL'den kullanıcı adını çıkar
-    username = utils.extract_username(request.instagram_url)
-    if not username:
-        raise HTTPException(status_code=400, detail="Geçersiz Instagram URL'si")
-    
-    print(f"[1/6] Kullanıcı adı: {username}")
+# --- YARDIMCI FONKSİYONLAR ---
 
-    # --- YENİ ADIM: VERİTABANI KONTROLÜ (CACHE MANTIĞI) ---
-    existing_posts = db.query(models.InstagramPost).filter(
-        models.InstagramPost.username == username
-    ).order_by(models.InstagramPost.post_timestamp.desc()).all()
-
-    if existing_posts:
-        print(f"[BİLGİ] {username} için veritabanında {len(existing_posts)} kayıt bulundu. AI analizi atlanıyor.")
-        print(f"{'='*60}\n")
-        return existing_posts
-    # -----------------------------------------------------
-
-    print(f"[BİLGİ] Veritabanında kayıt bulunamadı, yeni analiz başlatılıyor...")
-
-    # 2. Instagram'dan verileri çek
-    raw_posts = fetch_instagram_data(username)
-    
-    if raw_posts is None:
-        raise HTTPException(
-            status_code=500, 
-            detail="Instagram API bağlantı hatası. Token/ID'yi kontrol edin."
-        )
-    
-    if not raw_posts:
-        raise HTTPException(
-            status_code=404, 
-            detail="Profilde içerik bulunamadı veya profil kapalı/yok."
-        )
-    
-    print(f"[2/6] Instagram'dan {len(raw_posts)} post çekildi")
-    
-    # 3. AI ile analiz et
-    print(f"[3/6] AI analizi başlatılıyor...")
-    ai_results = analyze_instagram_posts(raw_posts)
-    
-    if not ai_results:
-        print("[WARN] AI analizi boş döndü")
-    
-    print(f"[4/6] AI'dan {len(ai_results)} sonuç alındı")
-    
-    # 4. Sonuçları birleştir
-    final_data = merge_analysis_with_posts(raw_posts, ai_results)
-    
-    # 5. Veritabanına kaydet (Duplicate kontrolü ile)
-    print(f"[5/6] Veritabanına kaydediliyor...")
+def save_posts_to_db(db: Session, final_data: list, username: str):
+    """Postları veritabanına kaydeden ortak fonksiyon."""
     saved_count = 0
-    
     for item in final_data:
         insta_id = str(item.get('id', ''))
-        if not insta_id: continue
-        
-        # Tekil kontrol (Aynı postun başka kullanıcı adıyla kaydedilmesini önler)
-        exists = db.query(models.InstagramPost).filter(
-            models.InstagramPost.instagram_id == insta_id
-        ).first()
+        exists = db.query(models.InstagramPost).filter(models.InstagramPost.instagram_id == insta_id).first()
         
         if not exists:
             new_post = models.InstagramPost(
@@ -104,61 +44,95 @@ def analyze_profile(request: schemas.AnalysisRequest, db: Session = Depends(data
                 media_url=item.get('media_url'),
                 post_timestamp=item.get('timestamp'),
                 ai_category=item.get('ai_category', 'Genel'),
-                ai_summary=item.get('ai_summary', 'Özet yok'),
+                ai_summary=item.get('ai_summary', 'Analiz edildi'),
                 drink_category=item.get('drink_category', 'Yok')
             )
             db.add(new_post)
             saved_count += 1
+    db.commit()
+    return saved_count
+
+def process_remaining_posts_task(username: str, initial_cursor: str):
+    """Arka planda tüm profili tarayan fonksiyon."""
+    db = database.SessionLocal() # Background task için manuel session
+    current_cursor = initial_cursor
+    
+    print(f"\n[BG-TASK START] {username} için arka plan analizi başladı.")
     
     try:
-        db.commit()
-        print(f"[6/6] ✓ {saved_count} yeni post kaydedildi.")
+        while current_cursor:
+            # 1. Instagram'dan sıradaki 25'liyi çek
+            posts, next_cursor = fetch_instagram_page(username, current_cursor)
+            if not posts: break
+            
+            # 2. AI Analizi
+            ai_results = analyze_instagram_posts(posts)
+            final_data = merge_analysis_with_posts(posts, ai_results)
+            
+            # 3. DB'ye yaz
+            save_posts_to_db(db, final_data, username)
+            
+            print(f"[BG-TASK] +{len(posts)} post analiz edildi. Sonraki cursor: {next_cursor}")
+            current_cursor = next_cursor
+            
+            # Instagram Rate Limit koruması
+            time.sleep(2) 
+            
     except Exception as e:
-        db.rollback()
-        print(f"[ERROR] Veritabanı hatası: {e}")
-        raise HTTPException(status_code=500, detail=f"DB kayıt hatası: {str(e)}")
-    
-    # Güncel tüm postları döndür
-    all_posts = db.query(models.InstagramPost).filter(
+        print(f"[BG-TASK-ERROR] {e}")
+    finally:
+        db.close()
+        print(f"[BG-TASK FINISH] {username} taraması bitti.\n")
+
+# --- ENDPOINTLER ---
+
+@app.post("/analyze", response_model=List[schemas.PostResponse])
+def analyze_profile(request: schemas.AnalysisRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
+    """Profil analiz ana endpoint'i."""
+    username = utils.extract_username(request.instagram_url)
+    if not username:
+        raise HTTPException(status_code=400, detail="Geçersiz URL.")
+
+    # 1. DB Kontrolü (Varsa AI ile vakit kaybetme)
+    existing_posts = db.query(models.InstagramPost).filter(
         models.InstagramPost.username == username
     ).order_by(models.InstagramPost.post_timestamp.desc()).all()
-    
-    print(f"\n{'='*60}")
-    print(f"ANALİZ BİTTİ: Toplam {len(all_posts)} post listeleniyor.")
-    print(f"{'='*60}\n")
-    
-    return all_posts
 
-@app.get("/")
-def home():
-    """API Sağlık Kontrolü"""
-    return {
-        "status": "online",
-        "message": "Reels Analizer API Çalışıyor",
-        "docs": "/docs",
-        "version": "1.0.0"
-    }
+    if existing_posts:
+        print(f"[INFO] {username} verileri DB'den getirildi.")
+        return existing_posts
+
+    # 2. İLK SAYFA ANALİZİ (Kullanıcıya hızlı yanıt için)
+    print(f"[NEW] {username} ilk kez analiz ediliyor...")
+    raw_posts, next_cursor = fetch_instagram_page(username)
+    
+    if not raw_posts:
+        raise HTTPException(status_code=404, detail="Profil içeriği boş veya ulaşılamaz.")
+
+    ai_results = analyze_instagram_posts(raw_posts)
+    final_data = merge_analysis_with_posts(raw_posts, ai_results)
+    save_posts_to_db(db, final_data, username)
+
+    # 3. KALANLARI ARKA PLANA AT
+    if next_cursor:
+        background_tasks.add_task(process_remaining_posts_task, username, next_cursor)
+    
+    # İlk 25'i hemen dön
+    return db.query(models.InstagramPost).filter(models.InstagramPost.username == username).all()
 
 @app.get("/posts/{username}")
 def get_user_posts(username: str, db: Session = Depends(database.get_db)):
-    """Belirli bir kullanıcının kayıtlı postlarını getirir"""
-    posts = db.query(models.InstagramPost).filter(
+    """Kullanıcının tüm postlarını getirir (BG Task bittikçe burası dolar)."""
+    return db.query(models.InstagramPost).filter(
         models.InstagramPost.username == username
-    ).order_by(
-        models.InstagramPost.post_timestamp.desc()
-    ).all()
-    
-    if not posts:
-        raise HTTPException(status_code=404, detail="Bu kullanıcıya ait post bulunamadı")
-    
-    return posts
+    ).order_by(models.InstagramPost.post_timestamp.desc()).all()
 
 @app.get("/stats/{username}")
 def get_drink_stats(username: str, db: Session = Depends(database.get_db)):
-    """Kullanıcının içerik kategorilerini istatistiksel olarak gösterir"""
+    """Angular'daki stats.total_posts ve stats.categories yapısına uygun döner"""
     from sqlalchemy import func
     
-    stats = db.query(
+    stats_query = db.query(
         models.InstagramPost.drink_category,
         func.count(models.InstagramPost.id).label('count')
     ).filter(
@@ -167,14 +141,19 @@ def get_drink_stats(username: str, db: Session = Depends(database.get_db)):
         models.InstagramPost.drink_category
     ).all()
     
-    if not stats:
-        raise HTTPException(status_code=404, detail="Bu kullanıcıya ait veri bulunamadı")
+    if not stats_query:
+        # Boş veri dönmek yerine Angular'ın hata almaması için default yapı dönelim
+        return {"username": username, "total_posts": 0, "categories": []}
     
     return {
         "username": username,
-        "total_posts": sum(s.count for s in stats),
+        "total_posts": sum(s.count for s in stats_query),
         "categories": [
             {"drink_category": s.drink_category, "count": s.count} 
-            for s in stats
+            for s in stats_query
         ]
     }
+
+@app.get("/")
+def health_check():
+    return {"status": "ok", "service": "reels-analizer-api"}

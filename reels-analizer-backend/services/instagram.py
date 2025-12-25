@@ -8,56 +8,35 @@ INSTAGRAM_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 API_VERSION = "v24.0" 
 
-def fetch_instagram_data(target_username: str, max_posts: int = 100):
+def fetch_instagram_page(target_username: str, after_cursor: str = None):
     """
-    Tüm postları (veya belirlenen limite kadar) sayfalama kullanarak çeker.
-    max_posts: Güvenlik için bir limit (AI maliyetini kontrol etmek için).
+    Instagram'dan tek seferde bir sayfa (25 post) veri çeker.
+    after_cursor: Varsa bir sonraki sayfanın işaretçisidir.
     """
-    all_posts = []
-    after_cursor = None
-    has_next_page = True
+    url = f"https://graph.facebook.com/{API_VERSION}/{INSTAGRAM_BUSINESS_ID}"
+    
+    # Sayfalama varsa sorguya ekle
+    media_query = "media{caption,media_type,media_url,timestamp,id}"
+    if after_cursor:
+        media_query = f"media.after({after_cursor}){{caption,media_type,media_url,timestamp,id}}"
 
-    print(f"[FETCH] {target_username} profili için veri çekme işlemi başladı...")
-
-    while has_next_page and len(all_posts) < max_posts:
-        url = f"https://graph.facebook.com/{API_VERSION}/{INSTAGRAM_BUSINESS_ID}"
+    params = {
+        "fields": f"business_discovery.username({target_username}){{{media_query}}}",
+        "access_token": ACCESS_TOKEN
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
         
-        # Sayfalama (pagination) parametresi: 
-        # İlk istekte None'dır, sonraki isteklerde 'after(CURSOR_KODU)' eklenir.
-        media_query = "media{caption,media_type,media_url,timestamp,id}"
-        if after_cursor:
-            media_query = f"media.after({after_cursor}){{caption,media_type,media_url,timestamp,id}}"
-
-        params = {
-            "fields": f"business_discovery.username({target_username}){{{media_query}}}",
-            "access_token": ACCESS_TOKEN
-        }
+        business_data = data.get('business_discovery', {})
+        media_data = business_data.get('media', {})
         
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            
-            business_data = data.get('business_discovery', {})
-            media_data = business_data.get('media', {})
-            
-            # Gelen postları listeye ekle
-            current_page_posts = media_data.get('data', [])
-            all_posts.extend(current_page_posts)
-            
-            print(f"[FETCH] {len(all_posts)} post toplandı...")
-
-            # Sonraki sayfa var mı kontrol et?
-            paging = media_data.get('paging', {})
-            after_cursor = paging.get('cursors', {}).get('after')
-            
-            if not after_cursor:
-                has_next_page = False
-                print("[FETCH] Tüm postlar çekildi.")
-            
-        except Exception as e:
-            print(f"[ERROR] Veri çekme sırasında hata: {e}")
-            break
-
-    # Belirlenen limitin üzerini kes
-    return all_posts[:max_posts]
+        posts = media_data.get('data', [])
+        next_cursor = media_data.get('paging', {}).get('cursors', {}).get('after')
+        
+        return posts, next_cursor
+    except Exception as e:
+        print(f"[INSTAGRAM-API-ERROR] {e}")
+        return [], None
