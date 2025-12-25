@@ -2,65 +2,62 @@ import requests
 import os
 from dotenv import load_dotenv
 
-# .env dosyasındaki değişkenleri yükle
 load_dotenv()
 
-# Sabitleri .env'den çekiyoruz
 INSTAGRAM_BUSINESS_ID = os.getenv("INSTAGRAM_BUSINESS_ID")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-# API Versiyonunu buraya yazabilirsin (Ekran görüntünde v24.0 görünüyor)
 API_VERSION = "v24.0" 
 
-def fetch_instagram_data(target_username: str):
+def fetch_instagram_data(target_username: str, max_posts: int = 100):
     """
-    Kullanıcı adını alır ve Instagram Graph API üzerinden 
-    o profile ait postları (caption, url, id vb.) getirir.
+    Tüm postları (veya belirlenen limite kadar) sayfalama kullanarak çeker.
+    max_posts: Güvenlik için bir limit (AI maliyetini kontrol etmek için).
     """
-    
-    # 1. API URL'sini oluşturuyoruz
-    # Senin ekran görüntündeki yapının birebir aynısı:
-    url = f"https://graph.facebook.com/{API_VERSION}/{INSTAGRAM_BUSINESS_ID}"
-    
-    # 2. Query parametrelerini (fields) tanımlıyoruz
-    params = {
-        "fields": f"business_discovery.username({target_username}){{media{{caption,media_type,media_url,timestamp,id}}}}",
-        "access_token": ACCESS_TOKEN
-    }
-    
-    try:
-        # 3. İsteği gönderiyoruz
-        response = requests.get(url, params=params)
-        
-        # 4. Hata kontrolü
-        response.raise_for_status() # Eğer 400 veya 500 hatası varsa exception fırlatır
-        
-        data = response.json()
-        
-        # 5. JSON içindeki karmaşık yapıyı sadeleştiriyoruz
-        # Graph API veriyi business_discovery -> media -> data hiyerarşisinde verir
-        if "business_discovery" in data and "media" in data["business_discovery"]:
-            posts = data["business_discovery"]["media"]["data"]
-            return posts
-        else:
-            print("Hata: Veri yapısı beklendiği gibi değil veya profil bulunamadı.")
-            return []
+    all_posts = []
+    after_cursor = None
+    has_next_page = True
 
-    except requests.exceptions.HTTPError as err:
-        print(f"HTTP Hatası Oluştu: {err}")
-        # Hata detayını terminalde görebilmek için:
-        print(f"Hata Mesajı: {response.text}")
-        return None
-    except Exception as e:
-        print(f"Beklenmedik bir hata oluştu: {e}")
-        return None
+    print(f"[FETCH] {target_username} profili için veri çekme işlemi başladı...")
 
-def clean_username(url_or_username: str):
-    """
-    Eğer kullanıcı tam link yapıştırırsa sadece kullanıcı adını ayıklar.
-    Örn: https://www.instagram.com/kitsune.cim/ -> kitsune.cim
-    """
-    if "instagram.com/" in url_or_username:
-        # Linkin sonundaki / işaretini temizle ve parçala
-        username = url_or_username.rstrip("/").split("/")[-1]
-        return username
-    return url_or_username # Zaten kullanıcı adıysa direkt döndür
+    while has_next_page and len(all_posts) < max_posts:
+        url = f"https://graph.facebook.com/{API_VERSION}/{INSTAGRAM_BUSINESS_ID}"
+        
+        # Sayfalama (pagination) parametresi: 
+        # İlk istekte None'dır, sonraki isteklerde 'after(CURSOR_KODU)' eklenir.
+        media_query = "media{caption,media_type,media_url,timestamp,id}"
+        if after_cursor:
+            media_query = f"media.after({after_cursor}){{caption,media_type,media_url,timestamp,id}}"
+
+        params = {
+            "fields": f"business_discovery.username({target_username}){{{media_query}}}",
+            "access_token": ACCESS_TOKEN
+        }
+        
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            business_data = data.get('business_discovery', {})
+            media_data = business_data.get('media', {})
+            
+            # Gelen postları listeye ekle
+            current_page_posts = media_data.get('data', [])
+            all_posts.extend(current_page_posts)
+            
+            print(f"[FETCH] {len(all_posts)} post toplandı...")
+
+            # Sonraki sayfa var mı kontrol et?
+            paging = media_data.get('paging', {})
+            after_cursor = paging.get('cursors', {}).get('after')
+            
+            if not after_cursor:
+                has_next_page = False
+                print("[FETCH] Tüm postlar çekildi.")
+            
+        except Exception as e:
+            print(f"[ERROR] Veri çekme sırasında hata: {e}")
+            break
+
+    # Belirlenen limitin üzerini kes
+    return all_posts[:max_posts]

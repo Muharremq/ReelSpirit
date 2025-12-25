@@ -27,7 +27,7 @@ models.Base.metadata.create_all(bind=database.engine)
 
 @app.post("/analyze", response_model=List[schemas.PostResponse])
 def analyze_profile(request: schemas.AnalysisRequest, db: Session = Depends(database.get_db)):
-    """Instagram profilini analiz eder ve veritabanına kaydeder"""
+    """Instagram profilini analiz eder veya veritabanında varsa direkt getirir"""
     
     print(f"\n{'='*60}")
     print(f"ANALİZ TALEBİ: {request.instagram_url}")
@@ -39,7 +39,20 @@ def analyze_profile(request: schemas.AnalysisRequest, db: Session = Depends(data
         raise HTTPException(status_code=400, detail="Geçersiz Instagram URL'si")
     
     print(f"[1/6] Kullanıcı adı: {username}")
-    
+
+    # --- YENİ ADIM: VERİTABANI KONTROLÜ (CACHE MANTIĞI) ---
+    existing_posts = db.query(models.InstagramPost).filter(
+        models.InstagramPost.username == username
+    ).order_by(models.InstagramPost.post_timestamp.desc()).all()
+
+    if existing_posts:
+        print(f"[BİLGİ] {username} için veritabanında {len(existing_posts)} kayıt bulundu. AI analizi atlanıyor.")
+        print(f"{'='*60}\n")
+        return existing_posts
+    # -----------------------------------------------------
+
+    print(f"[BİLGİ] Veritabanında kayıt bulunamadı, yeni analiz başlatılıyor...")
+
     # 2. Instagram'dan verileri çek
     raw_posts = fetch_instagram_data(username)
     
@@ -57,16 +70,12 @@ def analyze_profile(request: schemas.AnalysisRequest, db: Session = Depends(data
     
     print(f"[2/6] Instagram'dan {len(raw_posts)} post çekildi")
     
-    # DEBUG: İlk postun yapısını göster
-    print(f"[DEBUG] Örnek post yapısı:")
-    print(json.dumps(raw_posts[0], indent=2, ensure_ascii=False))
-    
     # 3. AI ile analiz et
     print(f"[3/6] AI analizi başlatılıyor...")
     ai_results = analyze_instagram_posts(raw_posts)
     
     if not ai_results:
-        print("[WARN] AI analizi boş döndü, fallback kullanılacak")
+        print("[WARN] AI analizi boş döndü")
     
     print(f"[4/6] AI'dan {len(ai_results)} sonuç alındı")
     
@@ -76,58 +85,46 @@ def analyze_profile(request: schemas.AnalysisRequest, db: Session = Depends(data
     # 5. Veritabanına kaydet (Duplicate kontrolü ile)
     print(f"[5/6] Veritabanına kaydediliyor...")
     saved_count = 0
-    skipped_count = 0
     
     for item in final_data:
-        # Instagram'dan gelen ID'yi al
         insta_id = str(item.get('id', ''))
+        if not insta_id: continue
         
-        if not insta_id:
-            print(f"[ERROR] Post ID bulunamadı, atlanıyor")
-            continue
-        
-        # Daha önce kaydedilmiş mi kontrol et
+        # Tekil kontrol (Aynı postun başka kullanıcı adıyla kaydedilmesini önler)
         exists = db.query(models.InstagramPost).filter(
             models.InstagramPost.instagram_id == insta_id
         ).first()
         
-        if exists:
-            skipped_count += 1
-            continue
-        
-        # Yeni kayıt oluştur
-        new_post = models.InstagramPost(
-            instagram_id=insta_id,
-            username=username,
-            caption=item.get('caption'),
-            media_type=item.get('media_type'),
-            media_url=item.get('media_url'),
-            post_timestamp=item.get('timestamp'),
-            ai_category=item.get('ai_category', 'Genel'),
-            ai_summary=item.get('ai_summary', 'Özet yok'),
-            drink_category=item.get('drink_category', 'Yok')
-        )
-        
-        db.add(new_post)
-        saved_count += 1
+        if not exists:
+            new_post = models.InstagramPost(
+                instagram_id=insta_id,
+                username=username,
+                caption=item.get('caption'),
+                media_type=item.get('media_type'),
+                media_url=item.get('media_url'),
+                post_timestamp=item.get('timestamp'),
+                ai_category=item.get('ai_category', 'Genel'),
+                ai_summary=item.get('ai_summary', 'Özet yok'),
+                drink_category=item.get('drink_category', 'Yok')
+            )
+            db.add(new_post)
+            saved_count += 1
     
     try:
         db.commit()
-        print(f"[6/6] ✓ {saved_count} yeni post kaydedildi, {skipped_count} zaten vardı")
+        print(f"[6/6] ✓ {saved_count} yeni post kaydedildi.")
     except Exception as e:
         db.rollback()
         print(f"[ERROR] Veritabanı hatası: {e}")
         raise HTTPException(status_code=500, detail=f"DB kayıt hatası: {str(e)}")
     
-    # 6. Kullanıcının tüm postlarını döndür
+    # Güncel tüm postları döndür
     all_posts = db.query(models.InstagramPost).filter(
         models.InstagramPost.username == username
-    ).order_by(
-        models.InstagramPost.post_timestamp.desc()
-    ).all()
+    ).order_by(models.InstagramPost.post_timestamp.desc()).all()
     
     print(f"\n{'='*60}")
-    print(f"TOPLAM SONUÇ: {len(all_posts)} post")
+    print(f"ANALİZ BİTTİ: Toplam {len(all_posts)} post listeleniyor.")
     print(f"{'='*60}\n")
     
     return all_posts
@@ -155,7 +152,6 @@ def get_user_posts(username: str, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=404, detail="Bu kullanıcıya ait post bulunamadı")
     
     return posts
-
 
 @app.get("/stats/{username}")
 def get_drink_stats(username: str, db: Session = Depends(database.get_db)):
