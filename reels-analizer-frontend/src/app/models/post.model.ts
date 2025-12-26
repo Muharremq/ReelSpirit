@@ -1,5 +1,6 @@
 export interface Post {
   instagram_id: string;
+  permalink?: string;
   username: string;
   caption: string | null;
   media_type: string;

@@ -18,11 +18,8 @@ export class ResultsComponent implements OnInit {
   isLoading: boolean = true;
   errorMessage: string = '';
   
-  // Filtreleme için
   selectedCategory: string = 'all';
   filteredPosts: Post[] = [];
-  
-  // Kategoriler
   availableCategories: string[] = [];
 
   constructor(
@@ -32,7 +29,6 @@ export class ResultsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // URL'den username'i al
     this.route.params.subscribe(params => {
       this.username = params['username'];
       this.loadData();
@@ -43,7 +39,6 @@ export class ResultsComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Postları ve istatistikleri paralel olarak yükle
     Promise.all([
       this.apiService.getUserPosts(this.username).toPromise(),
       this.apiService.getDrinkStats(this.username).toPromise()
@@ -51,10 +46,7 @@ export class ResultsComponent implements OnInit {
       this.posts = posts || [];
       this.stats = stats || null;
       this.filteredPosts = this.posts;
-      
-      // Kategorileri çıkar
       this.extractCategories();
-      
       this.isLoading = false;
     }).catch(error => {
       this.errorMessage = 'Veriler yüklenirken bir hata oluştu: ' + error.message;
@@ -88,7 +80,6 @@ export class ResultsComponent implements OnInit {
     this.router.navigate(['/']);
   }
 
-  // Kategori rengini belirle
   getCategoryColor(category: string | null): string {
     if (!category || category === 'Yok') return '#6b7280';
     
@@ -115,7 +106,6 @@ export class ResultsComponent implements OnInit {
     return colorMap[category] || '#6b7280';
   }
 
-  // Tarih formatla
   formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR', {
@@ -125,13 +115,26 @@ export class ResultsComponent implements OnInit {
     });
   }
 
-  // Post türü ikonu
   getMediaIcon(mediaType: string): string {
     return mediaType === 'VIDEO' ? '🎥' : '📷';
   }
 
-  // Instagram post URL'ini oluştur
-getInstagramPostUrl(postId: string): string {
-  return `https://www.instagram.com/p/${postId}/`;
+  // ✅ HTML'de kullanılan metod ismi
+getInstagramPostUrl(post: Post): string {
+  // Permalink varsa onu kullan
+  if (post.permalink) {
+    return post.permalink;
+  }
+  // Yoksa ID'den oluştur (çalışmayabilir)
+  return `https://www.instagram.com/p/${post.instagram_id}/`;
 }
+
+  /* Opsiyonel: Tıklama ile aç
+  openInstagramPost(instagramId: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const url = this.getInstagramPostUrl(instagramId);
+    window.open(url, '_blank');
+  }*/
 }

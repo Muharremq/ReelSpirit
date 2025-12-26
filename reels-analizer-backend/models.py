@@ -5,6 +5,7 @@ class InstagramPost(Base):
     __tablename__ = "instagram_posts"
 
     id = Column(Integer, primary_key=True, index=True)
+    permalink = Column(Text)
     instagram_id = Column(String(100), unique=True, nullable=False)
     username = Column(String(100), nullable=False, index=True)
     caption = Column(Text)

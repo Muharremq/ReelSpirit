@@ -16,9 +16,9 @@ def fetch_instagram_page(target_username: str, after_cursor: str = None):
     url = f"https://graph.facebook.com/{API_VERSION}/{INSTAGRAM_BUSINESS_ID}"
     
     # Sayfalama varsa sorguya ekle
-    media_query = "media{caption,media_type,media_url,timestamp,id}"
+    media_query = "media{caption,media_type,media_url,permalink,timestamp,id}"
     if after_cursor:
-        media_query = f"media.after({after_cursor}){{caption,media_type,media_url,timestamp,id}}"
+        media_query = f"media.after({after_cursor}){{caption,media_type,media_url,permalink,timestamp,id}}"
 
     params = {
         "fields": f"business_discovery.username({target_username}){{{media_query}}}",

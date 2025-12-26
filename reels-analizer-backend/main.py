@@ -38,6 +38,7 @@ def save_posts_to_db(db: Session, final_data: list, username: str):
         if not exists:
             new_post = models.InstagramPost(
                 instagram_id=insta_id,
+                permalink=item.get('permalink'),
                 username=username,
                 caption=item.get('caption'),
                 media_type=item.get('media_type'),
