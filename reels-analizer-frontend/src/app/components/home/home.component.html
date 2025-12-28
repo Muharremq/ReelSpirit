@@ -2,46 +2,16 @@
   <div class="content">
     <!-- Icon -->
     <div class="icon-container">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 64 64"
-        width="80"
-        height="80"
-      >
-        <defs>
-          <linearGradient
-            id="cocktailGradient"
-            x1="0%"
-            y1="0%"
-            x2="0%"
-            y2="100%"
-          >
-            <stop offset="0%" style="stop-color: #4caf50; stop-opacity: 1" />
-            <stop offset="100%" style="stop-color: #2196f3; stop-opacity: 1" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M20 30 L32 10 L44 30 Z"
-          fill="url(#cocktailGradient)"
-          opacity="0.6"
-        />
-        <path d="M20 30 L44 30 L40 50 L24 50 Z" fill="url(#cocktailGradient)" />
-        <rect x="30" y="50" width="4" height="10" fill="#666" />
-        <ellipse cx="32" cy="60" rx="8" ry="2" fill="#444" />
-        <circle cx="32" cy="22" r="3" fill="#FF5252" />
-        <line
-          x1="32"
-          y1="19"
-          x2="32"
-          y2="15"
-          stroke="#4CAF50"
-          stroke-width="1"
-        />
-      </svg>
+      <img
+        src="assets/logo.png"
+        alt="ReelSpirit Logo"
+        width="120"
+        height="120"
+      />
     </div>
 
     <!-- Title -->
-    <h1 class="title">Cocktail Recipe Analyzer</h1>
+    <h1 class="title">ReelSpirit</h1>
     <p class="subtitle">
       Enter an Instagram profile link to analyze and categorize cocktail recipes
     </p>
@@ -55,7 +25,7 @@
         type="text"
         id="instagram-url"
         [(ngModel)]="instagramUrl"
-        placeholder="https://www.instagram.com/kitsune.cim"
+        placeholder="https://www.instagram.com/xxxxx"
         class="input-field"
         [disabled]="isLoading"
         (keyup.enter)="analyzeProfile()"
@@ -88,18 +58,6 @@
       <div *ngIf="errorMessage" class="error-message">
         {{ errorMessage }}
       </div>
-    </div>
-
-    <!-- Example Link -->
-    <div class="example-section">
-      <p class="example-text">Try these example profiles:</p>
-      <a
-        href="javascript:void(0)"
-        class="example-link"
-        (click)="useExampleProfile()"
-      >
-        https://www.instagram.com/kitsune.cim
-      </a>
     </div>
   </div>
 </div>

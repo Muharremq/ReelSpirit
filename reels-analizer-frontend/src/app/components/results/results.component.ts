@@ -162,7 +162,8 @@ export class ResultsComponent implements OnInit, OnDestroy {
     return mediaType === 'VIDEO' ? '🎥' : '📷';
   }
 
-  getInstagramPostUrl(post: Post): string {
+getInstagramPostUrl(post: Post): string {
+    // Backend schemas.py düzeltilince burası artık çalışacak
     if (post.permalink) {
       return post.permalink;
     }

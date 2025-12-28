@@ -11,6 +11,7 @@ class PostResponse(BaseModel):
     caption: Optional[str] = None
     media_type: Optional[str] = None
     media_url: Optional[str] = None
+    permalink: Optional[str]
     post_timestamp: Optional[datetime] = None
     ai_category: Optional[str] = "General"
     ai_summary: Optional[str] = None

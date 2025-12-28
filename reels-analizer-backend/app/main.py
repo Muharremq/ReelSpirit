@@ -10,7 +10,7 @@ from utils import setup_logger
 logger = setup_logger("Main")
 
 app = FastAPI(
-    title="Reels Analyzer API",
+    title="ReelSpirit API",
     version="2.1.0",
     description="Modular & Async Instagram Analyzer"
 )
