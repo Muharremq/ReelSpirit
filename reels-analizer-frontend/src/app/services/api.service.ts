@@ -52,4 +52,10 @@ export class ApiService {
     console.error(errorMessage);
     return throwError(() => new Error(errorMessage));
   }
+
+getScanStatus(username: string): Observable<{ status: string }> {
+  // /analyze prefix'ini ekledik
+  return this.http.get<{ status: string }>(`${this.apiUrl}/analyze/status/${username}`)
+    .pipe(catchError(this.handleError));
+}
 }

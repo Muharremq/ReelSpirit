@@ -1,9 +1,9 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict
 
-# Proje içi importlar (Dosya yapınıza göre)
+# Proje içi importlar
 import database
 import models
 import schemas
@@ -14,16 +14,20 @@ from services.ai_analyzer import analyze_instagram_posts, merge_analysis_with_po
 # Router Tanımlaması
 router = APIRouter(
     prefix="/analyze",
-    tags=["Analysis"]  # Swagger UI'da başlık olarak görünür
+    tags=["Analysis"]
 )
 
 logger = setup_logger("Router-Analysis")
 
-# --- YARDIMCI FONKSİYONLAR (Local Helpers) ---
+# --- GLOBAL DURUM TAKİBİ ---
+# Hangi kullanıcının işlemi ne durumda? (processing, completed, error)
+scan_status: Dict[str, str] = {}
+
+# --- YARDIMCI FONKSİYONLAR ---
 
 def save_posts_to_db(db: Session, final_data: list, username: str):
     """
-    It saves the analyzed data to the database (Upsert logic).
+    Analiz edilmiş verileri veritabanına kaydeder (Upsert logic).
     """
     saved_count = 0
     for item in final_data:
@@ -46,7 +50,8 @@ def save_posts_to_db(db: Session, final_data: list, username: str):
                 # AI alanları
                 ai_category=item.get('ai_category', 'General'),
                 ai_summary=item.get('ai_summary', ''),
-                drink_category=item.get('drink_category', 'Unknown'),
+                # Varsayılan değer 'Other' olarak güncellendi
+                drink_category=item.get('drink_category', 'Other')
             )
             db.add(new_post)
             saved_count += 1
@@ -58,39 +63,53 @@ def save_posts_to_db(db: Session, final_data: list, username: str):
 
 async def process_remaining_posts_task(username: str, initial_cursor: str):
     """
-    An asynchronous function that runs in the background (Background Task).
-    It scans other pages in the user's profile.
+    Arka planda çalışan asenkron görev.
+    Diğer sayfaları tarar ve durumu günceller.
     """
-    logger.info(f"[BG-TASK] has started a deep scan for {username}.")
+    # 1. Durumu 'processing' yap
+    scan_status[username] = "processing"
+    logger.info(f"[BG-TASK] {username} için derinlemesine tarama başladı.")
+    
     current_cursor = initial_cursor
     
-    # Her background task kendi bağımsız DB oturumunu açmalıdır
     with database.SessionLocal() as db:
         try:
             while current_cursor:
-                # 1. Instagram'dan Çek (Async)
+                # Instagram'dan çek
                 posts, next_cursor = await fetch_instagram_page(username, current_cursor)
                 if not posts:
                     break
                 
-                # 2. AI Analizi Yap
+                # AI Analizi
                 ai_results = analyze_instagram_posts(posts)
                 final_data = merge_analysis_with_posts(posts, ai_results)
                 
-                # 3. DB'ye Kaydet
+                # DB Kayıt
                 save_posts_to_db(db, final_data, username)
                 
                 current_cursor = next_cursor
                 
-                # API Rate Limit koruması (2 saniye bekle)
+                # Rate limit koruması
                 await asyncio.sleep(2)
                 
         except Exception as e:
-            logger.error(f"[BG-TASK ERROR] {username} error: {e}")
+            logger.error(f"[BG-TASK ERROR] {username} hatası: {e}")
+            scan_status[username] = "error"
         finally:
             logger.info(f"[BG-TASK] {username} scan completed.")
+            # 2. İşlem bitince durumu 'completed' yap
+            scan_status[username] = "completed"
 
 # --- ENDPOINTLER ---
+
+@router.get("/status/{username}")
+async def get_scan_status(username: str):
+    """
+    Frontend'in sürekli sorduğu (polling) durum endpointi.
+    URL: /analyze/status/{username}
+    """
+    status = scan_status.get(username, "unknown")
+    return {"status": status}
 
 @router.post("/", response_model=List[schemas.PostResponse])
 async def analyze_profile(
@@ -100,40 +119,53 @@ async def analyze_profile(
 ):
     """
     POST /analyze
-    Kullanıcı analizini başlatır. İlk sayfayı döner, kalanı arkada işler.
+    Kullanıcı analizini başlatır.
     """
     username = extract_username(request.instagram_url)
     if not username:
         raise HTTPException(status_code=400, detail="Invalid Instagram URL")
 
-    # 1. Cache Kontrolü: Eğer son analiz yeniyse (örnek: veri varsa) direkt dön
-    # İsterseniz buraya 'updated_at' kontrolü ekleyebilirsiniz.
+    # 1. DB Kontrolü (Cache)
+    # Eğer işlem daha önce tamamlanmışsa ve veri varsa direkt dön
     existing_posts = db.query(models.InstagramPost).filter(
         models.InstagramPost.username == username
     ).order_by(models.InstagramPost.post_timestamp.desc()).limit(50).all()
 
-    if existing_posts:
-        logger.info(f"Data for {username} was retrieved from the database.")
+    # Eğer veri varsa ve şu an bir tarama işlemi yoksa cache'den dön
+    # (Eğer tarama devam ediyorsa completed demiyoruz, kullanıcı beklesin istiyoruz)
+    if existing_posts and scan_status.get(username) != "processing":
+        logger.info(f"{username} verileri veritabanından getirildi.")
+        # Durumu completed olarak işaretle ki frontend hemen durabilsin
+        scan_status[username] = "completed" 
         return existing_posts
 
-    # 2. Canlı Analiz (İlk Sayfa)
-    logger.info(f"Starting a new analysis for {username}...")
+    # 2. Canlı Analiz Başlatılıyor
+    logger.info(f"{username} için yeni analiz başlatılıyor...")
+    
+    # Durumu 'processing' olarak işaretle
+    scan_status[username] = "processing"
+
     raw_posts, next_cursor = await fetch_instagram_page(username)
     
     if not raw_posts:
+        # Hata durumunda statüyü temizle veya error yap
+        scan_status[username] = "error"
         raise HTTPException(status_code=404, detail="Profile not found or no posts.")
 
-    # AI İşlemleri
+    # İlk sayfa analizi
     ai_results = analyze_instagram_posts(raw_posts)
     final_data = merge_analysis_with_posts(raw_posts, ai_results)
     
     save_posts_to_db(db, final_data, username)
 
-    # 3. Geri Kalanları Arka Plana At
+    # 3. Kalan Sayfalar İçin Arka Plan Görevi
     if next_cursor:
         background_tasks.add_task(process_remaining_posts_task, username, next_cursor)
+    else:
+        # Eğer başka sayfa yoksa işlem hemen bitmiştir
+        scan_status[username] = "completed"
     
-    # Yanıt Dön
+    # İlk 25 postu dön
     return db.query(models.InstagramPost).filter(
         models.InstagramPost.username == username
     ).order_by(models.InstagramPost.post_timestamp.desc()).all()
