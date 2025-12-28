@@ -13,9 +13,12 @@ class InstagramPost(Base):
     media_url = Column(Text)
     post_timestamp = Column(DateTime)
     
-    ai_category = Column(String(100))
+    # AI Analiz Sonuçları
+    ai_category = Column(String(100), default="Genel")
     ai_summary = Column(Text)
-    
-    drink_category = Column(String(100), index=True)  # <- INDEX EKLE
+    drink_category = Column(String(100), index=True, default="Yok")
     
     created_at = Column(DateTime, server_default=func.now())
+
+    def __repr__(self):
+        return f"<Post(id={self.instagram_id}, user={self.username})>"
