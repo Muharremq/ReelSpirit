@@ -24,7 +24,7 @@ export class HomeComponent {
   analyzeProfile() {
     // Validation
     if (!this.instagramUrl.trim()) {
-      this.errorMessage = 'Lütfen bir Instagram profil linki girin';
+      this.errorMessage = 'Please enter an Instagram profile link.';
       return;
     }
 

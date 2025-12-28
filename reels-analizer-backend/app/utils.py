@@ -3,7 +3,7 @@ import logging
 from config import settings
 
 def setup_logger(name: str):
-    """Profesyonel loglama yapılandırması."""
+    """Professional logging configuration."""
     logger = logging.getLogger(name)
     
     if not logger.handlers:
@@ -19,7 +19,7 @@ def setup_logger(name: str):
     return logger
 
 def extract_username(input_str: str) -> str:
-    """Kullanıcı adını URL veya ham metinden ayıklar."""
+    """Extracts the username from the URL or raw text."""
     if not input_str:
         return ""
     clean_str = input_str.replace("@", "").strip()

@@ -34,8 +34,8 @@ async def fetch_instagram_page(target_username: str, after_cursor: str = None):
             return posts, next_cursor
             
         except httpx.HTTPStatusError as e:
-            logger.error(f"Instagram API Hatası: {e.response.text}")
+            logger.error(f"Instagram API Error: {e.response.text}")
             return [], None
         except Exception as e:
-            logger.error(f"Beklenmeyen Hata: {e}")
+            logger.error(f"Unexpected Error: {e}")
             return [], None

@@ -14,9 +14,9 @@ class InstagramPost(Base):
     post_timestamp = Column(DateTime)
     
     # AI Analiz Sonuçları
-    ai_category = Column(String(100), default="Genel")
+    ai_category = Column(String(100), default="General")
     ai_summary = Column(Text)
-    drink_category = Column(String(100), index=True, default="Yok")
+    drink_category = Column(String(100), index=True, default="Not Specified")
     
     created_at = Column(DateTime, server_default=func.now())
 

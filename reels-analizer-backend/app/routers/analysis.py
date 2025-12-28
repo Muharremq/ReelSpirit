@@ -23,7 +23,7 @@ logger = setup_logger("Router-Analysis")
 
 def save_posts_to_db(db: Session, final_data: list, username: str):
     """
-    Analiz edilmiş verileri veritabanına kaydeder (Upsert mantığı).
+    It saves the analyzed data to the database (Upsert logic).
     """
     saved_count = 0
     for item in final_data:
@@ -44,9 +44,9 @@ def save_posts_to_db(db: Session, final_data: list, username: str):
                 media_url=item.get('media_url'),
                 post_timestamp=item.get('timestamp'),
                 # AI alanları
-                ai_category=item.get('ai_category', 'Genel'),
+                ai_category=item.get('ai_category', 'General'),
                 ai_summary=item.get('ai_summary', ''),
-                drink_category=item.get('drink_category', 'Yok')
+                drink_category=item.get('drink_category', 'Unknown'),
             )
             db.add(new_post)
             saved_count += 1
@@ -58,10 +58,10 @@ def save_posts_to_db(db: Session, final_data: list, username: str):
 
 async def process_remaining_posts_task(username: str, initial_cursor: str):
     """
-    Arka planda (Background Task) çalışan asenkron fonksiyon.
-    Kullanıcının profilindeki diğer sayfaları tarar.
+    An asynchronous function that runs in the background (Background Task).
+    It scans other pages in the user's profile.
     """
-    logger.info(f"[BG-TASK] {username} için derinlemesine tarama başladı.")
+    logger.info(f"[BG-TASK] has started a deep scan for {username}.")
     current_cursor = initial_cursor
     
     # Her background task kendi bağımsız DB oturumunu açmalıdır
@@ -86,9 +86,9 @@ async def process_remaining_posts_task(username: str, initial_cursor: str):
                 await asyncio.sleep(2)
                 
         except Exception as e:
-            logger.error(f"[BG-TASK ERROR] {username} hatası: {e}")
+            logger.error(f"[BG-TASK ERROR] {username} error: {e}")
         finally:
-            logger.info(f"[BG-TASK] {username} taraması tamamlandı.")
+            logger.info(f"[BG-TASK] {username} scan completed.")
 
 # --- ENDPOINTLER ---
 
@@ -104,7 +104,7 @@ async def analyze_profile(
     """
     username = extract_username(request.instagram_url)
     if not username:
-        raise HTTPException(status_code=400, detail="Geçersiz Instagram URL'si")
+        raise HTTPException(status_code=400, detail="Invalid Instagram URL")
 
     # 1. Cache Kontrolü: Eğer son analiz yeniyse (örnek: veri varsa) direkt dön
     # İsterseniz buraya 'updated_at' kontrolü ekleyebilirsiniz.
@@ -113,15 +113,15 @@ async def analyze_profile(
     ).order_by(models.InstagramPost.post_timestamp.desc()).limit(50).all()
 
     if existing_posts:
-        logger.info(f"{username} verileri DB'den getirildi.")
+        logger.info(f"Data for {username} was retrieved from the database.")
         return existing_posts
 
     # 2. Canlı Analiz (İlk Sayfa)
-    logger.info(f"{username} için yeni analiz başlatılıyor...")
+    logger.info(f"Starting a new analysis for {username}...")
     raw_posts, next_cursor = await fetch_instagram_page(username)
     
     if not raw_posts:
-        raise HTTPException(status_code=404, detail="Profil bulunamadı veya gönderisi yok.")
+        raise HTTPException(status_code=404, detail="Profile not found or no posts.")
 
     # AI İşlemleri
     ai_results = analyze_instagram_posts(raw_posts)

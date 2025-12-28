@@ -49,7 +49,7 @@ export class ResultsComponent implements OnInit {
       this.extractCategories();
       this.isLoading = false;
     }).catch(error => {
-      this.errorMessage = 'Veriler yüklenirken bir hata oluştu: ' + error.message;
+      this.errorMessage = 'An error occurred while loading the data: ' + error.message;
       this.isLoading = false;
     });
   }
@@ -57,7 +57,7 @@ export class ResultsComponent implements OnInit {
   extractCategories() {
     const categories = new Set<string>();
     this.posts.forEach(post => {
-      if (post.drink_category && post.drink_category !== 'Yok') {
+      if (post.drink_category && post.drink_category !== 'None') {
         categories.add(post.drink_category);
       }
     });
@@ -84,23 +84,23 @@ export class ResultsComponent implements OnInit {
     if (!category || category === 'Yok') return '#6b7280';
     
     const colorMap: { [key: string]: string } = {
-      'Viski': '#d97706',
-      'Viski Kokteyli': '#f59e0b',
-      'Rom': '#92400e',
-      'Rom Kokteyli': '#b45309',
-      'Cin': '#059669',
-      'Cin Kokteyli': '#10b981',
-      'Votka': '#0891b2',
-      'Votka Kokteyli': '#06b6d4',
-      'Tekila': '#84cc16',
-      'Tekila Kokteyli': '#a3e635',
-      'Likör': '#8b5cf6',
-      'Likör Kokteyli': '#a78bfa',
-      'Kahve Kokteyli': '#78350f',
-      'Karışık Kokteyl': '#ec4899',
-      'Şarap': '#7c2d12',
-      'Bira': '#fbbf24',
-      'Rakı': '#cbd5e1'
+    'Whisky': '#d97706',
+    'Whisky Cocktail': '#f59e0b',
+    'Rum': '#92400e',
+    'Rum Cocktail': '#b45309',
+    'Gin': '#059669',
+    'Gin Cocktail': '#10b981',
+    'Vodka': '#0891b2',
+    'Vodka Cocktail': '#06b6d4',
+    'Tequila': '#84cc16',
+    'Tequila Cocktail': '#a3e635',
+    'Liqueur': '#8b5cf6',
+    'Liqueur Cocktail': '#a78bfa',
+    'Coffee Cocktail': '#78350f',
+    'Mixed Cocktail': '#ec4899',
+    'Wine': '#7c2d12',
+    'Beer': '#fbbf24',
+    'Rakı': '#cbd5e1'
     };
     
     return colorMap[category] || '#6b7280';
@@ -110,8 +110,8 @@ export class ResultsComponent implements OnInit {
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit'
     });
   }
 
@@ -128,13 +128,4 @@ getInstagramPostUrl(post: Post): string {
   // Yoksa ID'den oluştur (çalışmayabilir)
   return `https://www.instagram.com/p/${post.instagram_id}/`;
 }
-
-  /* Opsiyonel: Tıklama ile aç
-  openInstagramPost(instagramId: string, event?: Event) {
-    if (event) {
-      event.stopPropagation();
-    }
-    const url = this.getInstagramPostUrl(instagramId);
-    window.open(url, '_blank');
-  }*/
 }

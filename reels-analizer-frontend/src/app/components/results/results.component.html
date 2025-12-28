@@ -14,7 +14,7 @@
         >
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
-        Ana Sayfa
+        Home
       </button>
 
       <h1 class="header-title">
@@ -26,28 +26,28 @@
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="loading-spinner"></div>
-    <p class="loading-text">Veriler yükleniyor...</p>
+    <p class="loading-text">Loading data...</p>
   </div>
 
   <!-- Error State -->
   <div *ngIf="errorMessage && !isLoading" class="error-container">
     <div class="error-icon">⚠️</div>
-    <h2 class="error-title">Bir Hata Oluştu</h2>
+    <h2 class="error-title">An error occurred.</h2>
     <p class="error-message">{{ errorMessage }}</p>
-    <button class="retry-btn" (click)="loadData()">Tekrar Dene</button>
+    <button class="retry-btn" (click)="loadData()">Try again</button>
   </div>
 
   <!-- Main Content -->
   <div *ngIf="!isLoading && !errorMessage" class="main-content">
     <!-- Statistics Section -->
     <section class="stats-section" *ngIf="stats">
-      <h2 class="section-title">📊 İstatistikler</h2>
+      <h2 class="section-title">📊 Statistics</h2>
 
       <div class="stats-grid">
         <div class="stat-card stat-card-primary">
           <div class="stat-icon">📝</div>
           <div class="stat-info">
-            <p class="stat-label">Toplam Post</p>
+            <p class="stat-label">Total Post</p>
             <p class="stat-value">{{ stats.total_posts }}</p>
           </div>
         </div>
@@ -55,7 +55,7 @@
         <div class="stat-card stat-card-secondary">
           <div class="stat-icon">🍹</div>
           <div class="stat-info">
-            <p class="stat-label">Farklı Kategori</p>
+            <p class="stat-label">Different Category</p>
             <p class="stat-value">{{ stats.categories.length }}</p>
           </div>
         </div>
@@ -63,7 +63,7 @@
         <div class="stat-card stat-card-accent">
           <div class="stat-icon">🏆</div>
           <div class="stat-info">
-            <p class="stat-label">En Popüler</p>
+            <p class="stat-label">Most Popular</p>
             <p class="stat-value">
               {{ stats.categories[0]?.drink_category || "N/A" }}
             </p>
@@ -74,7 +74,7 @@
 
     <!-- Filter Section -->
     <section class="filter-section">
-      <h2 class="section-title">🔍 Postları Filtrele</h2>
+      <h2 class="section-title">🔍 Filter Posts</h2>
 
       <div class="filter-chips">
         <button
@@ -82,7 +82,7 @@
           [class.active]="selectedCategory === 'all'"
           (click)="filterByCategory('all')"
         >
-          Tümü ({{ posts.length }})
+          All ({{ posts.length }})
         </button>
 
         <button
@@ -112,7 +112,7 @@
       <!-- Empty State -->
       <div *ngIf="filteredPosts.length === 0" class="empty-state">
         <div class="empty-icon">🔍</div>
-        <p class="empty-text">Bu kategoride post bulunamadı</p>
+        <p class="empty-text">No posts were found in this category.</p>
       </div>
 
       <!-- Posts Grid -->
@@ -150,7 +150,7 @@
             </div>
 
             <!-- AI Summary -->
-            <h3 class="post-title">{{ post.ai_summary || "Başlık yok" }}</h3>
+            <h3 class="post-title">{{ post.ai_summary || "No title" }}</h3>
 
             <!-- Caption -->
             <p class="post-caption" *ngIf="post.caption">
@@ -195,7 +195,7 @@
                 ></path>
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
               </svg>
-              Instagram'da Görüntüle
+              View on Instagram
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
