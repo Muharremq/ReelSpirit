@@ -54,10 +54,11 @@ export class ResultsComponent implements OnInit {
     });
   }
 
-  extractCategories() {
+extractCategories() {
     const categories = new Set<string>();
     this.posts.forEach(post => {
-      if (post.drink_category && post.drink_category !== 'None') {
+      // Sadece boş olanları filtrele, 'Other' dahil her şeyi kabul et
+      if (post.drink_category && post.drink_category !== 'None' && post.drink_category !== 'Yok') {
         categories.add(post.drink_category);
       }
     });
@@ -81,7 +82,7 @@ export class ResultsComponent implements OnInit {
   }
 
   getCategoryColor(category: string | null): string {
-    if (!category || category === 'Yok') return '#6b7280';
+    if (!category || category === 'Other') return '#6b7280';
     
     const colorMap: { [key: string]: string } = {
     'Whisky': '#d97706',
@@ -100,7 +101,8 @@ export class ResultsComponent implements OnInit {
     'Mixed Cocktail': '#ec4899',
     'Wine': '#7c2d12',
     'Beer': '#fbbf24',
-    'Rakı': '#cbd5e1'
+    'Rakı': '#cbd5e1',
+    'Other': '#9ca3af'
     };
     
     return colorMap[category] || '#6b7280';

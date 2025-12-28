@@ -23,7 +23,7 @@ Respond in JSON format, strictly adhering to the rules below.
 - Cocktails (Mix/Ambiguous): "Mixed Cocktail".
 - Coffee + Alcohol: "Coffee Cocktail".
 - Liqueur based: "Liqueur Cocktail".
-- No alcohol or unclear: "None".
+- No alcohol or unclear: "Other".
 
 **IMPORTANT:** - Look for keywords in the text like 'cl', 'oz', 'recipe', 'mix'.
 - Return ONLY a valid JSON list.
@@ -94,7 +94,7 @@ def analyze_instagram_posts(posts_data):
                     "id": id_map[p_id],
                     "category": res.get("category", "General"),
                     "summary": res.get("summary", "No summary available."),
-                    "drink_category": res.get("drink_category", "None")
+                    "drink_category": res.get("drink_category", "Other")
                 })
         
         logger.info(f"AI analysis completed: {len(final_results)} items processed.")
@@ -130,7 +130,7 @@ def create_fallback_analysis(posts_data):
 
     for post in posts_data:
         caption = (post.get("caption") or "").lower()
-        drink_cat = "None"
+        drink_cat = "Other"
         detected_drinks = []
 
         # 1. Hangi içkiler geçiyor?
@@ -159,7 +159,7 @@ def create_fallback_analysis(posts_data):
                 drink_cat = "Mixed Cocktail"
 
         # Kategori belirleme (Basit)
-        if drink_cat != "None":
+        if drink_cat != "Other":
             category = "Gastronomy"
             summary = f"{drink_cat} recipe or showcase."
         elif any(x in caption for x in ["fashion", "style", "moda", "outfit"]):
@@ -188,7 +188,7 @@ def merge_analysis_with_posts(original_posts, ai_results):
             res = ai_map[p_id]
             post['ai_category'] = res.get('category', 'General')
             post['ai_summary'] = res.get('summary', '')
-            post['drink_category'] = res.get('drink_category', 'None')
+            post['drink_category'] = res.get('drink_category', 'Other')
         else:
             post['drink_category'] = 'Unprocessed'
             post['ai_category'] = 'General'

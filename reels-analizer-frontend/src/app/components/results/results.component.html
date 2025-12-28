@@ -65,7 +65,11 @@
           <div class="stat-info">
             <p class="stat-label">Most Popular</p>
             <p class="stat-value">
-              {{ stats.categories[0]?.drink_category || "N/A" }}
+              {{
+                stats.categories.length > 0
+                  ? stats.categories[0].drink_category
+                  : "N/A"
+              }}
             </p>
           </div>
         </div>
@@ -105,7 +109,7 @@
     <!-- Posts Grid -->
     <section class="posts-section">
       <h2 class="section-title">
-        📱 Postlar
+        📱 Posts
         <span class="post-count">({{ filteredPosts.length }})</span>
       </h2>
 
