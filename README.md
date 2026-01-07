@@ -1,20 +1,15 @@
 🍸 ReelSpirit - AI Powered Instagram Analyzer
-ReelSpirit is a comprehensive web application that analyses Instagram content creators' profiles, monitors shared Reels videos using Google Gemini AI, and automatically categorises them based on their content (particularly cocktail and drink recipes).
+    ReelSpirit is a comprehensive web application that analyses Instagram content creators' profiles, monitors shared Reels videos using Google Gemini AI, and automatically categorises them based on their content (particularly cocktail and drink recipes).
 
 🎯 Project Objective and Approach
-There are thousands of fantastic cocktail and gastronomy posts on Instagram, but finding a specific recipe (such as ‘vodka-based cocktails’) requires watching hundreds of videos one by one.
+    There are thousands of fantastic cocktail and gastronomy posts on Instagram, but finding a specific recipe (such as ‘vodka-based cocktails’) requires watching hundreds of videos one by one.
 
 ReelSpirit was created to solve this problem:
-
-It takes an Instagram profile link from the user.
-
-It extracts the descriptions and metadata from the videos.
-
-It analyses the content using Artificial Intelligence (Gemini).
-
-It determines whether the content is a cocktail recipe and, if so, which base spirit (Whisky, Gin, Tequila, etc.) it contains.
-
-It provides the user with a statistical dashboard and a filterable gallery.
+- It takes an Instagram profile link from the user.
+- It extracts the descriptions and metadata from the videos.
+- It analyses the content using Artificial Intelligence (Gemini).
+- It determines whether the content is a cocktail recipe and, if so, which base spirit (Whisky, Gin, Tequila, etc.) it contains.
+- It provides the user with a statistical dashboard and a filterable gallery.
 
 🚀 Features
 🔍 Profile Analysis: Can analyse any public Instagram profile (Business/Creator).
@@ -50,7 +45,8 @@ DevOps
 To run this project in your local environment, you only need to have Docker and the Docker Desktop application installed on your computer.
 
 1. Clone the Project
-```git clone https://github.com/kullaniciadiniz/ReelSpirit.git
+```
+git clone https://github.com/kullaniciadiniz/ReelSpirit.git
 cd ReelSpirit-Project
 ```
 
@@ -100,7 +96,7 @@ For API Documentation (Swagger):
 👉 http://localhost:8000/docs
 
 📂 Project Structure
-```text
+```
 ReelSpirit-Project/
 ├── docker-compose.yml       # Orchestrates all services
 │
@@ -133,11 +129,11 @@ ReelSpirit-Project/
 🤝 Contribute
 Fork this project.
 
-Create a new feature branch (git checkout -b feature/AmazingFeature).
+Create a new feature branch.
 
-Commit your changes (git commit -m “Add some AmazingFeature”).
+Commit your changes.
 
-Push your branch (git push origin feature/AmazingFeature).
+Push your branch.
 
 Create a Pull Request.
 
