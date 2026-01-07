@@ -1,4 +1,4 @@
-<img width="772" height="551" alt="image" src="https://github.com/user-attachments/assets/04164578-f2c3-49b5-9c7d-146d3362e20a" />🍸 ReelSpirit - AI Powered Instagram Analyzer
+🍸 ReelSpirit - AI Powered Instagram Analyzer
 ReelSpirit is a comprehensive web application that analyses Instagram content creators' profiles, monitors shared Reels videos using Google Gemini AI, and automatically categorises them based on their content (particularly cocktail and drink recipes).
 
 🎯 Project Objective and Approach
