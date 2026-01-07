@@ -1,0 +1,41 @@
+services:
+  # --- Backend Servisi ---
+  backend:
+    build: ./ReelSpirit-Backend
+    container_name: reelspirit_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    # 👇 BU SATIRI EKLEYİN: Hata alırsa (DB hazır değilse) tekrar dene
+    restart: on-failure 
+    env_file:
+      - ./ReelSpirit-Backend/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:1029@db:5432/ReelSpiritDB
+
+  # --- Veritabanı Servisi ---
+  db:
+    image: postgres:15-alpine
+    container_name: ReelSpiritDB
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1029"
+      POSTGRES_DB: ReelSpiritDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- Frontend Servisi ---
+  frontend:
+    build: ./ReelSpirit-Frontend
+    container_name: reelspirit_ui
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
