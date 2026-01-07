@@ -1,10 +1,10 @@
 🍸 ReelSpirit - AI Powered Instagram Analyzer
     
-    ReelSpirit is a comprehensive web application that analyses Instagram content creators' profiles, monitors shared Reels videos using Google Gemini AI, and automatically categorises them based on their content (particularly cocktail and drink recipes).
+ReelSpirit is a comprehensive web application that analyses Instagram content creators' profiles, monitors shared Reels videos using Google Gemini AI, and automatically categorises them based on their content (particularly cocktail and drink recipes).
 
 🎯 Project Objective and Approach
     
-    There are thousands of fantastic cocktail and gastronomy posts on Instagram, but finding a specific recipe (such as ‘vodka-based cocktails’) requires watching hundreds of videos one by one.
+There are thousands of fantastic cocktail and gastronomy posts on Instagram, but finding a specific recipe (such as ‘vodka-based cocktails’) requires watching hundreds of videos one by one.
 
 ReelSpirit was created to solve this problem:
 - It takes an Instagram profile link from the user.
