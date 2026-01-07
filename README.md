@@ -1,4 +1,4 @@
-🍸 ReelSpirit - AI Powered Instagram Analyzer
+<img width="772" height="551" alt="image" src="https://github.com/user-attachments/assets/04164578-f2c3-49b5-9c7d-146d3362e20a" />🍸 ReelSpirit - AI Powered Instagram Analyzer
 ReelSpirit is a comprehensive web application that analyses Instagram content creators' profiles, monitors shared Reels videos using Google Gemini AI, and automatically categorises them based on their content (particularly cocktail and drink recipes).
 
 🎯 Project Objective and Approach
@@ -29,49 +29,42 @@ It provides the user with a statistical dashboard and a filterable gallery.
 
 📱 Responsive Design: A modern and mobile-friendly interface with Angular Material.
 
-🛠 Technologies Used
+🛠 Kullanılan Teknolojiler
 Backend
-Python & FastAPI: High-performance asynchronous API.
-
-Google Gemini AI: Content analysis and summarisation.
-
-Instagram Graph API: Data retrieval operations.
-
-PostgreSQL & SQLAlchemy: Database and ORM structure.
-
-Pydantic: Data validation.
+- Python & FastAPI: Yüksek performanslı asenkron API.
+- Google Gemini AI: İçerik analizi ve özetleme.
+- Instagram Graph API: Veri çekme işlemleri.
+- PostgreSQL & SQLAlchemy: Veritabanı ve ORM yapısı.
+- Pydantic: Veri doğrulama.
 
 Frontend
-Angular 18+: Modern SPA architecture.
-
-RxJS: Reactive programming and polling mechanisms.
-
-SCSS: Customised styles.
+- Angular 18+: Modern SPA mimarisi.
+- RxJS: Reaktif programlama ve polling mekanizmaları.
+- SCSS: Özelleştirilmiş stiller.
 
 DevOps
-Docker & Docker Compose: Containerisation.
-
-Nginx: Frontend server and Reverse Proxy.
+- Docker & Docker Compose: Konteynerizasyon.
+- Nginx: Frontend sunucusu ve Reverse Proxy.
 
 ⚙️Installation and Execution
 To run this project in your local environment, you only need to have Docker and the Docker Desktop application installed on your computer.
 
 1. Clone the Project
-git clone https://github.com/kullaniciadiniz/ReelSpirit.git
+```git clone https://github.com/kullaniciadiniz/ReelSpirit.git
 cd ReelSpirit-Project
+```
 
-2. Configure Environment Variables (Optional Customisation)
+2. Configure Environment Variables (Optional)
 Within the project, there is a ready-made .env file in the ReelSpirit-Backend folder. This file contains the default API keys and tokens required for the project to run.
 
 To quickly test the project, you can proceed to the next step without making any changes to this file.
-
 However, if you wish to use the project with your own accounts (your own Instagram Business account or your own Google Gemini quota), you can customise these values as follows:
 
-Open the .env file in the ReelSpirit-Backend folder using any text editor (Notepad, VS Code, etc.).
+- Open the .env file in the ReelSpirit-Backend folder using any text editor (Notepad, VS Code, etc.).
 
-Replace the following fields with your own values:
-
-# --- Instagram Settings ---
+- Replace the following fields with your own values:
+```
+# ---Instagram Settings ---
 # Enter the ID and Token you obtained from your Facebook Developer portal here
 INSTAGRAM_BUSINESS_ID=YOUR_BUSINESS_ID_VALUE
 ACCESS_TOKEN=YOUR_FACEBOOK_ACCESS_TOKEN_VALUE
@@ -82,27 +75,54 @@ GOOGLE_API_KEY=YOUR_GEMINI_API_KEY_VALUE
 
 # --- Database Settings (Can remain default for Docker) ---
 DATABASE_URL=postgresql://postgres:1029@db:5432/ReelSpiritDB
+```
 Note: Using your own API keys prevents you from hitting the limits (quotas) of the default keys.
 
 3. Start with a Single Command 🚀
 Open the terminal in the root directory (where the docker-compose.yml file is located) and enter the following command:
 
+```
 docker-compose up --build
-
+```
 This process performs the following steps:
 
-It installs the PostgreSQL database.
+- It installs the PostgreSQL database.
 
-It creates the backend image and starts the API.
+- It creates the backend image and starts the API.
 
-It compiles (builds) the Angular application and serves it with Nginx.
+- It compiles (builds) the Angular application and serves it with Nginx.
 
 4. Access the Application
 Once the installation is complete, go to the following address in your browser:
-
 👉 http://localhost:4200/
 
-For API Documentation (Swagger): 👉 http://localhost:8000/docs
+For API Documentation (Swagger): 
+👉 http://localhost:8000/docs
+
+📂 Project Structure
+```text
+ReelSpirit-Project/
+├── docker-compose.yml       # Orchestrates all services
+│
+├── ReelSpirit-Backend/      # Python FastAPI Service
+│   ├── Dockerfile
+│   ├── .env                 # API Keys
+│   ├── app/
+│   │   ├── main.py          # API Entry Point
+│   │   ├── services/        # AI and Instagram services
+│   │   ├── routers/         # API Endpoint definitions
+│   │   └── models.py        # Database models
+│   └── requirements.txt
+│
+└── ReelSpirit-Frontend/     # Angular Application
+    ├── Dockerfile
+    ├── nginx.conf           # Server settings
+    └── src/
+        ├── app/
+        │   ├── components/  # Page components (Home, Results)
+        │   └── services/    # Backend connection services
+        └── assets/
+```
 
 <img width="757" height="657" alt="image" src="https://github.com/user-attachments/assets/027f519e-6884-48df-bb43-d6ac9d2429c4" />
 
@@ -120,6 +140,8 @@ Commit your changes (git commit -m “Add some AmazingFeature”).
 Push your branch (git push origin feature/AmazingFeature).
 
 Create a Pull Request.
+
+📞 Contact and Developer
 
 Developer: Ozan Muharrem Şahin
 
