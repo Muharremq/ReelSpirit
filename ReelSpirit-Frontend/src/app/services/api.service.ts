@@ -8,7 +8,7 @@ import { Post, AnalysisRequest, DrinkStats } from '../models/post.model';
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'http://localhost:8000'; // FastAPI backend URL'in
+  private apiUrl = 'http://192.168.1.113:8000'; // FastAPI backend URL'in
 
   constructor(private http: HttpClient) { }
 
