@@ -111,7 +111,7 @@ async def get_scan_status(username: str):
     status = scan_status.get(username, "unknown")
     return {"status": status}
 
-@router.post("/", response_model=List[schemas.PostResponse])
+@router.post("", response_model=List[schemas.PostResponse])
 async def analyze_profile(
     request: schemas.AnalysisRequest, 
     background_tasks: BackgroundTasks, 
