@@ -18,7 +18,10 @@ app = FastAPI(
 # CORS Ayarları
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"], # Frontend adresi
+    allow_origins=[
+        "http://localhost:4200", 
+        "http://192.168.1.113:4200"  # <- Bunu ekle
+    ], # Frontend adresi
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
