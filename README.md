@@ -14,6 +14,7 @@ ReelSpirit was created to solve this problem:
 - It provides the user with a statistical dashboard and a filterable gallery.
 
 🚀 Features
+
 🔍 Profile Analysis: Can analyse any public Instagram profile (Business/Creator).
 
 🤖 AI-Powered Classification: Intelligently tags videos with Google Gemini integration.
@@ -26,29 +27,29 @@ ReelSpirit was created to solve this problem:
 
 📱 Responsive Design: A modern and mobile-friendly interface with Angular Material.
 
-🛠 Kullanılan Teknolojiler
+🛠 Technologies Used
 Backend
-- Python & FastAPI: Yüksek performanslı asenkron API.
-- Google Gemini AI: İçerik analizi ve özetleme.
-- Instagram Graph API: Veri çekme işlemleri.
-- PostgreSQL & SQLAlchemy: Veritabanı ve ORM yapısı.
-- Pydantic: Veri doğrulama.
+- Python & FastAPI: High performance asynchronous API.
+- Google Gemini AI: Content analysis and summarization.
+- Instagram Graph API: Data extraction operations.
+- PostgreSQL & SQLAlchemy: Database and ORM structure.
+- Pydantic: Data validation.
 
-Frontend
-- Angular 18+: Modern SPA mimarisi.
-- RxJS: Reaktif programlama ve polling mekanizmaları.
-- SCSS: Özelleştirilmiş stiller.
+front end
+- Angular 18+: Modern SPA architecture.
+- RxJS: Reactive programming and polling mechanisms.
+- SCSS: Customized styles.
 
 DevOps
-- Docker & Docker Compose: Konteynerizasyon.
-- Nginx: Frontend sunucusu ve Reverse Proxy.
+- Docker & Docker Compose: Containerization.
+- Nginx: Frontend server and Reverse Proxy.
 
 ⚙️Installation and Execution
 To run this project in your local environment, you only need to have Docker and the Docker Desktop application installed on your computer.
 
 1. Clone the Project
 ```
-git clone https://github.com/kullaniciadiniz/ReelSpirit.git
+git clone https://github.com/yourusername/ReelSpirit.git
 cd ReelSpirit-Project
 ```
 
